@@ -16,6 +16,8 @@
 
 Color lightMint = {239, 255, 228, 255};
 
+// SAVE
+
 char *SaveImageDialog(const char *default_name) {
     char command[1024];
     char path[1024];
@@ -54,10 +56,14 @@ void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numR
     free(filePath);
 }
 
+// ENUMS
+
 typedef enum Scenes {
     SELECT_RESOLUTION = 0,
     EDITOR = 1
 } Scenes;
+
+// TOOLS
 
 void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int height, bool color) {
     if (x < 0 || x >= width || y < 0 || y >= height) {
@@ -72,6 +78,32 @@ void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int h
     floodFill(image, x - 1, y, width, height, color);
     floodFill(image, x, y + 1, width, height, color);
     floodFill(image, x, y - 1, width, height, color);
+}
+
+void drawLine(float x0, float y0, float x1, float y1, bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows, bool color) {
+    float dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    float dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    float err = dx + dy, e2;
+
+    while (true) {
+        if (x0 >= 0 && x0 < numColumns && y0 >= 0 && y0 < numRows) {
+            image[(int)y0][(int)x0] = color;
+        }
+
+        if (x0 == x1 && y0 == y1) {
+            break;
+        }
+
+        e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy;
+            x0 += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
 }
 
 static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canvasWidth, int *canvasHeight, float *cellWidth, float *cellHeight, float *spacing, Rectangle *editorLayoutRecs) {
@@ -122,7 +154,7 @@ int main() {
 
     //----------------------------------------------------------------------------------
     // Const text
-    const char *ToggleGroupToolsText = "#22#;#28#;#29#";
+    const char *ToggleGroupToolsText = "#22#;#28#;#29#;#30#";
     const char *SaveButtonText = "#05# Save";
     const char *LoadButtonText = "#06# Load";
 
@@ -142,7 +174,8 @@ int main() {
     Vector2 anchorCanvasTopLeft = {CANVAS_X, CANVAS_Y};
 
     // Define controls variables
-    int activeTool = 0;  // 0 = Draw 1 = Erase 2 = Fill
+    int activeTool = 0;  // 0 = Draw | 1 = Erase | 2 = Fill | 3 = Line |
+
     bool editResolutionWidth = 0;
     bool editResolutionHeight = 0;
 
@@ -161,6 +194,8 @@ int main() {
 
     Vector2 gridMouseCell = {0, 0};
 
+    Vector2 dragStartPoint = {0, 0};
+
     // Define editor controls rectangles
     Rectangle resolutionLayoutRecs[3] = {
         (Rectangle){anchorCenterCenter.x - 140, anchorCenterCenter.y - 20, 100, 30},  // Spinner: Width
@@ -174,7 +209,6 @@ int main() {
         (Rectangle){anchorTopLeft.x + 20, anchorTopLeft.y + 20, 60, 40},                      // LabelButton: Load
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
-
 
     Image mintRat = LoadImage("mintrat.png");
     Texture2D texMintRat = LoadTextureFromImage(mintRat);
@@ -191,6 +225,15 @@ int main() {
             case SELECT_RESOLUTION:
                 break;
             case EDITOR:
+                if (IsMouseButtonPressed(0)) {
+                    switch(activeTool) {
+                        case 3:
+                            dragStartPoint = gridMouseCell;
+                            break;
+                        default:
+                            break;
+                    }
+                }
                 if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
                     switch (activeTool) {
                         case 0:
@@ -204,6 +247,9 @@ int main() {
                             if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
                                 floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
                             }
+                            break;
+                        case 3:
+                            drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
                             break;
                         default:
                             break;
@@ -237,7 +283,7 @@ int main() {
 
         } else if (scene == EDITOR) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-            // Draw seprator
+            // Draw separator
             DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
             // Draw canvas
             for (int i = 0; i < numRows; i++) {
