@@ -5,14 +5,11 @@
 
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
-#define BUTTON_WIDTH 100
-#define BUTTON_HEIGHT 30
-#define BUTTON_PADDING 10
 #define CANVAS_X 200
 #define CANVAS_Y 40
 #define TILE_SIZE 10
 
-char* SaveImageDialog(const char* default_name) {
+char *SaveImageDialog(const char *default_name) {
     char command[1024];
     char path[1024];
     FILE *fp;
@@ -35,35 +32,33 @@ char* SaveImageDialog(const char* default_name) {
 }
 
 void SaveImage() {
-    char* filePath = SaveImageDialog("untitled.c");
+    char *filePath = SaveImageDialog("untitled.c");
     if (filePath != NULL) {
         printf("Saving image to: %s\n", filePath);
         free(filePath);
     } else {
         printf("Save cancelled or error occurred\n");
     }
-
 }
-
 
 typedef enum Scenes {
     SELECT_RESOLUTION = 0,
     EDITOR = 1
 } Scenes;
 
-void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int height) {
+void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int height, bool color) {
     if (x < 0 || x >= width || y < 0 || y >= height) {
         return;
     }
-    if (image[y][x] == true) {
+    if (image[y][x] == color) {
         return;
     }
-    image[y][x] = true;
+    image[y][x] = color;
 
-    floodFill(image, x + 1, y, width, height);
-    floodFill(image, x - 1, y, width, height);
-    floodFill(image, x, y + 1, width, height);
-    floodFill(image, x, y - 1, width, height);
+    floodFill(image, x + 1, y, width, height, color);
+    floodFill(image, x - 1, y, width, height, color);
+    floodFill(image, x, y + 1, width, height, color);
+    floodFill(image, x, y - 1, width, height, color);
 }
 
 static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canvasWidth, int *canvasHeight, float *cellWidth, float *cellHeight, float *spacing, Rectangle *editorLayoutRecs) {
@@ -118,8 +113,16 @@ int main() {
     // Define anchors
     Vector2 anchorTopLeft = {20, 20};
     Vector2 anchorTopCenter = {screenWidth / 2, 20};
+    Vector2 anchorTopRight = {screenWidth - 20, 20};
+
     Vector2 anchorCenterLeft = {20, screenHeight / 2};
     Vector2 anchorCenterCenter = {screenWidth / 2, screenHeight / 2};
+    Vector2 anchorCenterRight = {screenWidth - 20, screenHeight / 2};
+
+    Vector2 anchorBottomLeft = {20, screenHeight - 20};
+    Vector2 anchorBottomCenter = {screenWidth / 2, screenHeight - 20};
+    Vector2 anchorBottomRight = {screenWidth - 20, screenHeight - 20};
+
     Vector2 anchorCanvasTopLeft = {CANVAS_X, CANVAS_Y};
 
     // Define controls variables
@@ -167,11 +170,37 @@ int main() {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         // Update
-            printf("X: %d Y: %d\n", (int)gridMouseCell.x, (int)gridMouseCell.y);  // TODO: Remove
-
-            if (IsMouseButtonPressed(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
-                image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1; // IMPLEMENT TOOLS HERE!
-            }
+        if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+            switch (activeTool) {
+                case 0:
+                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                    break;
+                case 1:
+                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                    break;
+                case 2:
+                    if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
+                        floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
+                    }
+                    break;
+                default:
+                    break;
+            };
+        } else if (IsMouseButtonDown(1) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+            switch (activeTool) {
+                case 0:
+                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                    break;
+                case 1:
+                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                    break;
+                case 2:
+                    floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
+                    break;
+                default:
+                    break;
+            };
+        }
 
         // Draw
         BeginDrawing();
@@ -190,7 +219,7 @@ int main() {
                     if (image[i][j]) {
                         DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight, cellWidth, cellHeight, BLACK);
                     } else {
-                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight , cellWidth, cellHeight, WHITE);
+                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight, cellWidth, cellHeight, WHITE);
                     }
                 }
             }
@@ -200,7 +229,6 @@ int main() {
             if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton();
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
-
         }
         EndDrawing();
         //----------------------------------------------------------------------------------
