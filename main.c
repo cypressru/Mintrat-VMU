@@ -13,6 +13,8 @@
 #define CANVAS_Y 70
 #define TILE_SIZE 11
 
+Color lightMint = {239, 255, 228, 255};
+
 char *SaveImageDialog(const char *default_name) {
     char command[1024];
     char path[1024];
@@ -172,7 +174,7 @@ int main() {
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
-    SetTargetFPS(60);
+    SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -231,7 +233,7 @@ int main() {
                     if (image[i][j]) {
                         DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
                     } else {
-                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, WHITE);
+                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
                     }
                 }
             }
