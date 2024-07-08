@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
 #define CANVAS_X 238
@@ -166,9 +167,9 @@ int main() {
     };
 
     Rectangle editorLayoutRecs[4] = {
-        (Rectangle){anchorCenterLeft.x + 20, anchorCenterLeft.y * 0.7, 40, 24},                                                             // ToggleGroup: Tools
-        (Rectangle){anchorTopLeft.x + 84, anchorTopLeft.y + 20, 60, 40},                                                                    // LabelButton: Save
-        (Rectangle){anchorTopLeft.x + 20, anchorTopLeft.y + 20, 60, 40},                                                                    // LabelButton: Load
+        (Rectangle){anchorCenterLeft.x + 20, anchorCenterLeft.y * 0.7, 40, 24},               // ToggleGroup: Tools
+        (Rectangle){anchorTopLeft.x + 84, anchorTopLeft.y + 20, 60, 40},                      // LabelButton: Save
+        (Rectangle){anchorTopLeft.x + 20, anchorTopLeft.y + 20, 60, 40},                      // LabelButton: Load
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
@@ -179,37 +180,44 @@ int main() {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         // Update
-        if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
-            switch (activeTool) {
-                case 0:
-                    printf("(%f, %f)\n", gridMouseCell.x, gridMouseCell.y);
-                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
-                    break;
-                case 1:
-                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
-                    break;
-                case 2:
-                    if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
-                        floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
-                    }
-                    break;
-                default:
-                    break;
-            };
-        } else if (IsMouseButtonDown(1) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
-            switch (activeTool) {
-                case 0:
-                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
-                    break;
-                case 1:
-                    image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
-                    break;
-                case 2:
-                    floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
-                    break;
-                default:
-                    break;
-            };
+
+        switch (scene) {
+            case SELECT_RESOLUTION:
+                break;
+            case EDITOR:
+                if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+                    switch (activeTool) {
+                        case 0:
+                            printf("(%f, %f)\n", gridMouseCell.x, gridMouseCell.y);
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                            break;
+                        case 1:
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                            break;
+                        case 2:
+                            if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
+                                floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
+                            }
+                            break;
+                        default:
+                            break;
+                    };
+                } else if (IsMouseButtonDown(1) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+                    switch (activeTool) {
+                        case 0:
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                            break;
+                        case 1:
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                            break;
+                        case 2:
+                            floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
+                            break;
+                        default:
+                            break;
+                    };
+                }
+                break;
         }
 
         // Draw
@@ -217,8 +225,8 @@ int main() {
         if (scene == SELECT_RESOLUTION) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-            if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &numColumns, 0, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
-            if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &numRows, 0, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
+            if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &numColumns, 1, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
+            if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &numRows, 1, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
             if (GuiButton(resolutionLayoutRecs[2], "Confirm")) ConfirmButton(&scene, numColumns, numRows, &canvasWidth, &canvasHeight, &cellWidth, &cellHeight, &spacing, editorLayoutRecs);
 
         } else if (scene == EDITOR) {
