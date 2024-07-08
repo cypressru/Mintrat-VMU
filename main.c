@@ -301,7 +301,7 @@ int main() {
             if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton(image, numColumns, numRows);
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
-
+            DrawEllipse(95, 390, 70, 20, BLACK); 
             DrawTextureEx(texMintRat, (Vector2){ 40, 300 }, 0.0f, 2, WHITE);
             //DrawTexture(texMintRat, 70, 370, WHITE);
         }
