@@ -12,6 +12,40 @@
 #define CANVAS_Y 40
 #define TILE_SIZE 10
 
+char* SaveImageDialog(const char* default_name) {
+    char command[1024];
+    char path[1024];
+    FILE *fp;
+    snprintf(command, sizeof(command),
+             "zenity --file-selection --save --confirm-overwrite "
+             "--file-filter='C source files (*.c) | *.c' --filename='%s'",
+             default_name);
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("Failed to run zenity command\n");
+        return NULL;
+    }
+    if (fgets(path, sizeof(path) - 1, fp) != NULL) {
+        path[strcspn(path, "\n")] = 0;
+        pclose(fp);
+        return strdup(path);
+    }
+    pclose(fp);
+    return NULL;
+}
+
+void SaveImage() {
+    char* filePath = SaveImageDialog("untitled.png");
+    if (filePath != NULL) {
+        printf("Saving image to: %s\n", filePath);
+        free(filePath);
+    } else {
+        printf("Save cancelled or error occurred\n");
+    }
+
+}
+
+
 typedef enum Scenes {
     SELECT_RESOLUTION = 0,
     EDITOR = 1
