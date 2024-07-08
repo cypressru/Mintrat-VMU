@@ -1,13 +1,12 @@
 #include "raylib.h"
-
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#include "MintedRat.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "MintedRat.h"
 
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
@@ -15,7 +14,7 @@
 #define CANVAS_Y 40
 #define TILE_SIZE 10
 
-char* SaveImageDialog(const char* default_name) {
+char *SaveImageDialog(const char *default_name) {
     char command[1024];
     char path[1024];
     FILE *fp;
@@ -33,8 +32,8 @@ char* SaveImageDialog(const char* default_name) {
     return NULL;
 }
 
-void SaveImageToArray(const char* filePath, const bool image[MAX_HEIGHT][MAX_WIDTH], int width, int height) {
-    FILE* file = fopen(filePath, "w");
+void SaveImageToArray(const char *filePath, const bool image[MAX_HEIGHT][MAX_WIDTH], int width, int height) {
+    FILE *file = fopen(filePath, "w");
     fprintf(file, "static const char VMU_Image = {\n");
     for (int y = 0; y < height; y++) {
         fprintf(file, "    0b");
@@ -48,11 +47,10 @@ void SaveImageToArray(const char* filePath, const bool image[MAX_HEIGHT][MAX_WID
 }
 
 void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
-    char* filePath = SaveImageDialog("untitled.c");
+    char *filePath = SaveImageDialog("untitled.c");
     SaveImageToArray(filePath, image, numColumns, numRows);
     free(filePath);
 }
-
 
 typedef enum Scenes {
     SELECT_RESOLUTION = 0,
@@ -102,7 +100,7 @@ static void LoadButton();
 int main() {
     // Initialization
     //---------------------------------------------------------------------------------------
-    
+
     int screenWidth = 800;
     int screenHeight = 480;
 
@@ -110,11 +108,9 @@ int main() {
 
     Scenes scene = SELECT_RESOLUTION;
 
-
     InitWindow(screenWidth, screenHeight, "Mintrat");
-    //Here ya go
+    // Here ya go
     GuiLoadStyleMintedRat();
-    
 
     Vector2 mousePos;
     bool mouseDown = false;
