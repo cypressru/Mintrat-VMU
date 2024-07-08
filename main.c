@@ -35,7 +35,7 @@ char* SaveImageDialog(const char* default_name) {
 }
 
 void SaveImage() {
-    char* filePath = SaveImageDialog("untitled.png");
+    char* filePath = SaveImageDialog("untitled.c");
     if (filePath != NULL) {
         printf("Saving image to: %s\n", filePath);
         free(filePath);
