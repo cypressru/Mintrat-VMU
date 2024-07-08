@@ -175,7 +175,7 @@ int main() {
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
-    SetTargetFPS(120);
+    SetTargetFPS(240);
     //--------------------------------------------------------------------------------------
 
     // Main game loop
