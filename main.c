@@ -3,13 +3,17 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
 #define CANVAS_X 200
 #define CANVAS_Y 40
 #define TILE_SIZE 10
 
-char *SaveImageDialog(const char *default_name) {
+char* SaveImageDialog(const char* default_name) {
     char command[1024];
     char path[1024];
     FILE *fp;
@@ -18,10 +22,6 @@ char *SaveImageDialog(const char *default_name) {
              "--file-filter='C source files (*.c) | *.c' --filename='%s'",
              default_name);
     fp = popen(command, "r");
-    if (fp == NULL) {
-        printf("Failed to run zenity command\n");
-        return NULL;
-    }
     if (fgets(path, sizeof(path) - 1, fp) != NULL) {
         path[strcspn(path, "\n")] = 0;
         pclose(fp);
@@ -31,15 +31,26 @@ char *SaveImageDialog(const char *default_name) {
     return NULL;
 }
 
-void SaveImage() {
-    char *filePath = SaveImageDialog("untitled.c");
-    if (filePath != NULL) {
-        printf("Saving image to: %s\n", filePath);
-        free(filePath);
-    } else {
-        printf("Save cancelled or error occurred\n");
+void SaveImageToArray(const char* filePath, const bool image[MAX_HEIGHT][MAX_WIDTH], int width, int height) {
+    FILE* file = fopen(filePath, "w");
+    fprintf(file, "static const char VMU_Image = {\n");
+    for (int y = 0; y < height; y++) {
+        fprintf(file, "    0b");
+        for (int x = 0; x < width; x++) {
+            fprintf(file, "%d", image[y][x] ? 1 : 0);
+        }
+        fprintf(file, "%s\n", (y < height - 1) ? "," : "");
     }
+    fprintf(file, "};\n\n");
+    fclose(file);
 }
+
+void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
+    char* filePath = SaveImageDialog("untitled.c");
+    SaveImageToArray(filePath, image, numColumns, numRows);
+    free(filePath);
+}
+
 
 typedef enum Scenes {
     SELECT_RESOLUTION = 0,
@@ -79,8 +90,8 @@ static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canva
 //----------------------------------------------------------------------------------
 // Controls Functions Declaration
 //----------------------------------------------------------------------------------
-
-static void SaveButton();
+static void SaveButton(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows);
+void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows);
 static void LoadButton();
 
 //------------------------------------------------------------------------------------
@@ -226,7 +237,7 @@ int main() {
 
             // Draw controls
             GuiToggleGroup(editorLayoutRecs[0], ToggleGroupToolsText, &activeTool);
-            if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton();
+            if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton(image, numColumns, numRows);
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
         }
@@ -246,8 +257,9 @@ int main() {
 // Controls Functions Definitions (local)
 //------------------------------------------------------------------------------------
 
-static void SaveButton() {
+static void SaveButton(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
     printf("SAVE!\n");
+    SaveImage(image, numColumns, numRows);
 }
 
 static void LoadButton() {
