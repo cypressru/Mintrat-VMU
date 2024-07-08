@@ -10,10 +10,9 @@
 #define BUTTON_PADDING 10
 #define CANVAS_X 200
 #define CANVAS_Y 40
-#define CANVAS_WIDTH 480
-#define CANVAS_HEIGHT 320
+#define TILE_SIZE 10
 
-enum {
+typedef enum Scenes {
     SELECT_RESOLUTION = 0,
     EDITOR = 1
 } Scenes;
@@ -31,6 +30,21 @@ void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int h
     floodFill(image, x - 1, y, width, height);
     floodFill(image, x, y + 1, width, height);
     floodFill(image, x, y - 1, width, height);
+}
+
+static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canvasWidth, int *canvasHeight, float *cellWidth, float *cellHeight, float *spacing, Rectangle *editorLayoutRecs) {
+    *canvasWidth = TILE_SIZE * numColumns;
+    *canvasHeight = TILE_SIZE * numRows;
+
+    *cellWidth = *canvasWidth / numColumns;
+    *cellHeight = *canvasHeight / numRows;
+
+    *spacing = (*cellWidth + *cellHeight) / 2;
+
+    editorLayoutRecs[3].width = *canvasWidth;
+    editorLayoutRecs[3].height = *canvasHeight;
+
+    *scene = EDITOR;
 }
 
 //----------------------------------------------------------------------------------
@@ -51,7 +65,7 @@ int main() {
 
     int tile_size;
 
-    Scenes = SELECT_RESOLUTION;
+    Scenes scene = SELECT_RESOLUTION;
 
     InitWindow(screenWidth, screenHeight, "Mintrat");
 
@@ -60,11 +74,6 @@ int main() {
     bool savingFile = false;
 
     bool image[MAX_HEIGHT][MAX_WIDTH] = {0};
-    for (int y = 0; y < MAX_HEIGHT; y++) {
-        for (int x = 0; x < MAX_WIDTH; x++) {
-            image[y][x] = false;
-        }
-    }
 
     //----------------------------------------------------------------------------------
     // Const text
@@ -77,18 +86,27 @@ int main() {
     Vector2 anchorTopCenter = {screenWidth / 2, 20};
     Vector2 anchorCenterLeft = {20, screenHeight / 2};
     Vector2 anchorCenterCenter = {screenWidth / 2, screenHeight / 2};
+    Vector2 anchorCanvasTopLeft = {CANVAS_X, CANVAS_Y};
 
     // Define controls variables
     int activeTool = 0;  // 0 = Draw 1 = Erase 2 = Fill
     bool editResolutionWidth = 0;
     bool editResolutionHeight = 0;
 
-    // Define value variables
-    int resolutionWidth = MAX_WIDTH;
-    int resolutionHeight = MAX_HEIGHT;
+    // Define stuff TODO: name this shit lol
 
-    int numRows = 48;
-    int numColumns = 32;
+    int numColumns = 48;  // Width
+    int numRows = 32;     // Height
+
+    int canvasWidth = TILE_SIZE * numColumns;
+    int canvasHeight = TILE_SIZE * numRows;
+
+    float cellWidth = canvasWidth / numColumns;
+    float cellHeight = canvasHeight / numRows;
+
+    float spacing = (cellWidth + cellHeight) / 2;
+
+    Vector2 gridMouseCell = {0, 0};
 
     // Define editor controls rectangles
     Rectangle resolutionLayoutRecs[3] = {
@@ -97,10 +115,15 @@ int main() {
         (Rectangle){anchorCenterCenter.x - 90, anchorCenterCenter.y + 40, 160, 30},   // GuiButton: Confirm
     };
 
-    Rectangle editorLayoutRecs[3] = {
-        (Rectangle){anchorCenterLeft.x, anchorCenterLeft.y / 2, 40, 24},  // ToggleGroup: Tools
-        (Rectangle){anchorTopLeft.x + 60, anchorTopLeft.y - 20, 64, 60},  // LabelButton: Save
-        (Rectangle){anchorTopLeft.x, anchorTopLeft.y - 20, 64, 60},       // LabelButton: Load
+    Rectangle CanvasScrollView = {anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight};
+    Vector2 CanvasScrollOffset = {10, 10};
+    Vector2 CanvasBoundsOffset = {20, 20};
+
+    Rectangle editorLayoutRecs[4] = {
+        (Rectangle){anchorCenterLeft.x, anchorCenterLeft.y / 2, 40, 24},                                                                    // ToggleGroup: Tools
+        (Rectangle){anchorTopLeft.x + 60, anchorTopLeft.y - 20, 64, 60},                                                                    // LabelButton: Save
+        (Rectangle){anchorTopLeft.x, anchorTopLeft.y - 20, 64, 60},                                                                         // LabelButton: Load
+        (Rectangle){anchorCanvasTopLeft.x - CanvasBoundsOffset.x, anchorCanvasTopLeft.y - CanvasBoundsOffset.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
     SetTargetFPS(60);
@@ -110,36 +133,40 @@ int main() {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         // Update
-        //----------------------------------------------------------------------------------
-        if (Scenes == SELECT_RESOLUTION) {
-            // Resolution selection logic
-        } else if (Scenes == EDITOR) {
-            // GRAB MOUSE INPUT HERE
-        }
-        //----------------------------------------------------------------------------------
+            printf("X: %d Y: %d\n", (int)gridMouseCell.x, (int)gridMouseCell.y);  // TODO: Remove
+
+            if (IsMouseButtonPressed(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+                image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1; // IMPLEMENT TOOLS HERE!
+            }
 
         // Draw
-        //----------------------------------------------------------------------------------
         BeginDrawing();
-        if (Scenes == SELECT_RESOLUTION) {
+        if (scene == SELECT_RESOLUTION) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-            if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &resolutionWidth, 0, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
-            if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &resolutionHeight, 0, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
-            if (GuiButton(resolutionLayoutRecs[2], "Confirm")) Scenes = EDITOR;
+            if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &numColumns, 0, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
+            if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &numRows, 0, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
+            if (GuiButton(resolutionLayoutRecs[2], "Confirm")) ConfirmButton(&scene, numColumns, numRows, &canvasWidth, &canvasHeight, &cellWidth, &cellHeight, &spacing, editorLayoutRecs);
 
-        } else if (Scenes == EDITOR) {
+        } else if (scene == EDITOR) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-            mousePos = GetMousePosition();
-            mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+            // Draw canvas
+            for (int i = 0; i < numRows; i++) {
+                for (int j = 0; j < numColumns; j++) {
+                    if (image[i][j]) {
+                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight, cellWidth, cellHeight, BLACK);
+                    } else {
+                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight , cellWidth, cellHeight, WHITE);
+                    }
+                }
+            }
 
             // Draw controls
             GuiToggleGroup(editorLayoutRecs[0], ToggleGroupToolsText, &activeTool);
             if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton();
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
-            GuiPanel((Rectangle){CANVAS_X, CANVAS_Y, CANVAS_WIDTH, CANVAS_HEIGHT}, NULL);
+            GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
 
-            // DRAW CANVAS HERE
         }
         EndDrawing();
         //----------------------------------------------------------------------------------
