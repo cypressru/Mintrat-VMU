@@ -126,7 +126,6 @@ static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canva
 bool previewCanvas[MAX_HEIGHT][MAX_WIDTH] = {0};
 bool isDrawingLine = false;
 
-
 //----------------------------------------------------------------------------------
 // Controls Functions Declaration
 //----------------------------------------------------------------------------------
@@ -232,77 +231,110 @@ int main() {
         switch (scene) {
             case SELECT_RESOLUTION:
                 break;
-            case EDITOR:
-                if (gridMouseCell.x < 0 || gridMouseCell.x > numColumns || gridMouseCell.y < 0 || gridMouseCell.y > numRows) {
-                    break;
-                }
-
-                if (IsMouseButtonPressed(0))
-                {
-                    switch (activeTool)
-                    {
-                    case 3:
-                        dragStartPoint = gridMouseCell;
-                        isDrawingLine = true;
-                        // Initialize previewCanvas with the current image
-                        memcpy(previewCanvas, image, sizeof(image));
-                        break;
+            case EDITOR: // TODO: Organize this mess, there's a lot of repeated code
+                if (gridMouseCell.x < 0 || gridMouseCell.x > numColumns || gridMouseCell.y < 0 || gridMouseCell.y > numRows) {  // Out of bounds
+                    if (IsMouseButtonReleased(0)) {
+                        switch (activeTool) {
+                            case 3:
+                                if (isDrawingLine) {
+                                    isDrawingLine = false;
+                                    // Draw the final line on the actual image
+                                    drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, 1);
+                                }
+                                break;
+                        }
+                    } else if (IsMouseButtonReleased(1)) {
+                        switch (activeTool) {
+                            case 3:
+                                if (isDrawingLine) {
+                                    isDrawingLine = false;
+                                    // Draw the final line on the actual image
+                                    drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, 0);
+                                }
+                                break;
+                        }
                     }
-                }
-
-                if (IsMouseButtonDown(0)) {
+                    break;
+                } else if (IsMouseButtonPressed(0)) {
+                    switch (activeTool) {
+                        case 3:
+                            dragStartPoint = gridMouseCell;
+                            isDrawingLine = true;
+                            // Initialize previewCanvas with the current image
+                            memcpy(previewCanvas, image, sizeof(image));
+                            break;
+                    }
+                } else if (IsMouseButtonPressed(1)) {
+                    switch (activeTool) {
+                        case 3:
+                            dragStartPoint = gridMouseCell;
+                            isDrawingLine = true;
+                            // Initialize previewCanvas with the current image
+                            memcpy(previewCanvas, image, sizeof(image));
+                            break;
+                    }
+                } else if (IsMouseButtonDown(0)) {
                     switch (activeTool) {
                         case 0:
-                            printf("(%f, %f)\n", gridMouseCell.x, gridMouseCell.y);
                             image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
                             break;
                         case 1:
                             image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
                             break;
                         case 2:
-                            if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0)
-                            {
+                            if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
                                 floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
                             }
                             break;
                         case 3:
                             memcpy(previewCanvas, image, sizeof(image));
                             // Draw preview line on previewCanvas
-                            drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, previewCanvas, numColumns, numRows, 1);
+                            dragEndPoint = gridMouseCell;
+                            drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, previewCanvas, numColumns, numRows, 1);
                             break;
                         default:
                             break;
-                        };
-                }
-                else if (IsMouseButtonDown(1))
-                {
-                    switch (activeTool)
-                    {
-                    case 0:
-                        image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
-                        break;
-                    case 1:
-                        image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
-                        break;
-                    case 2:
-                        floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
-                        break;
-                    default:
-                        break;
                     };
-                }
-                if (IsMouseButtonReleased(0))
-                {
-                    switch (activeTool)
-                    {
-                    case 3:
-                        if (isDrawingLine)
-                        {
-                            isDrawingLine = false;
-                            // Draw the final line on the actual image
-                            drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
-                        }
-                        break;
+                } else if (IsMouseButtonDown(1)) {
+                    switch (activeTool) {
+                        case 0:
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                            break;
+                        case 1:
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                            break;
+                        case 2:
+                            floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
+                            break;
+                        case 3:
+                            memcpy(previewCanvas, image, sizeof(image));
+                            // Draw preview line on previewCanvas
+                            dragEndPoint = gridMouseCell;
+                            drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, previewCanvas, numColumns, numRows, 0);
+                            break;
+                        default:
+                            break;
+                    };
+                } else if (IsMouseButtonReleased(0)) {
+                    switch (activeTool) {
+                        case 3:
+                            if (isDrawingLine) {
+                                isDrawingLine = false;
+                                // Draw the final line on the actual image
+                                drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
+                            }
+                            break;
+                    }
+                } else if (IsMouseButtonReleased(1)) {
+                    switch (activeTool) {
+                        case 3:
+                            if (isDrawingLine) {
+                                isDrawingLine = false;
+                                printf("DRAW!!!!\n");
+                                // Draw the final line on the actual image
+                                drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 0);
+                            }
+                            break;
                     }
                 }
                 break;
@@ -319,29 +351,16 @@ int main() {
 
         } else if (scene == EDITOR) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+
             // Draw separator
             DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
-            // Draw canvas
-                //            for (int i = 0; i < numRows; i++) {
-                //              for (int j = 0; j < numColumns; j++) {
-                //                if (image[i][j]) {
-                //                  DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
-                    //            } else {
-                    //              DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
-                        //        }
-                        //  }
-                        //}
 
-            for (int i = 0; i < numRows; i++)
-            {
-                for (int j = 0; j < numColumns; j++)
-                {
-                    if ((isDrawingLine && previewCanvas[i][j]) || (!isDrawingLine && image[i][j]))
-                    {
+            // Draw canvas
+            for (int i = 0; i < numRows; i++) {
+                for (int j = 0; j < numColumns; j++) {
+                    if ((isDrawingLine && previewCanvas[i][j]) || (!isDrawingLine && image[i][j])) {
                         DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
-                    }
-                    else
-                    {
+                    } else {
                         DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
                     }
                 }
@@ -354,7 +373,6 @@ int main() {
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
             DrawEllipse(95, 390, 70, 20, (Color){0, 0, 0, 150});
             DrawTextureEx(texMintRat, (Vector2){40, 300}, 0.0f, 2, WHITE);
-            // DrawTexture(texMintRat, 70, 370, WHITE);
         }
         EndDrawing();
         //----------------------------------------------------------------------------------
