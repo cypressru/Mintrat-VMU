@@ -210,7 +210,7 @@ int main() {
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
-    Image mintRat = LoadImage("mintrat.png");
+    Image mintRat = LoadImage("../mintrat.png");
     Texture2D texMintRat = LoadTextureFromImage(mintRat);
 
     SetTargetFPS(240);
@@ -301,7 +301,7 @@ int main() {
             if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton(image, numColumns, numRows);
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
-            DrawEllipse(95, 390, 70, 20, BLACK); 
+            DrawEllipse(95, 390, 70, 20, (Color){0, 0, 0, 150});
             DrawTextureEx(texMintRat, (Vector2){ 40, 300 }, 0.0f, 2, WHITE);
             //DrawTexture(texMintRat, 70, 370, WHITE);
         }
