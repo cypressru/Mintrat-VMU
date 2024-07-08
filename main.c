@@ -52,6 +52,9 @@ void SaveImageToArray(const char *filePath, const bool image[MAX_HEIGHT][MAX_WID
 
 void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
     char *filePath = SaveImageDialog("untitled.c");
+    if (filePath == NULL) {
+        return;
+    }
     SaveImageToArray(filePath, image, numColumns, numRows);
     free(filePath);
 }
