@@ -7,12 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
-#define CANVAS_X 200
-#define CANVAS_Y 40
-#define TILE_SIZE 10
+#define CANVAS_X 238
+#define CANVAS_Y 70
+#define TILE_SIZE 11
 
 char *SaveImageDialog(const char *default_name) {
     char command[1024];
@@ -166,15 +165,11 @@ int main() {
         (Rectangle){anchorCenterCenter.x - 90, anchorCenterCenter.y + 40, 160, 30},   // GuiButton: Confirm
     };
 
-    Rectangle CanvasScrollView = {anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight};
-    Vector2 CanvasScrollOffset = {10, 10};
-    Vector2 CanvasBoundsOffset = {20, 20};
-
     Rectangle editorLayoutRecs[4] = {
-        (Rectangle){anchorCenterLeft.x, anchorCenterLeft.y / 2, 40, 24},                                                                    // ToggleGroup: Tools
-        (Rectangle){anchorTopLeft.x + 60, anchorTopLeft.y - 20, 64, 60},                                                                    // LabelButton: Save
-        (Rectangle){anchorTopLeft.x, anchorTopLeft.y - 20, 64, 60},                                                                         // LabelButton: Load
-        (Rectangle){anchorCanvasTopLeft.x - CanvasBoundsOffset.x, anchorCanvasTopLeft.y - CanvasBoundsOffset.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
+        (Rectangle){anchorCenterLeft.x + 20, anchorCenterLeft.y * 0.7, 40, 24},                                                             // ToggleGroup: Tools
+        (Rectangle){anchorTopLeft.x + 84, anchorTopLeft.y + 20, 60, 40},                                                                    // LabelButton: Save
+        (Rectangle){anchorTopLeft.x + 20, anchorTopLeft.y + 20, 60, 40},                                                                    // LabelButton: Load
+        (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
     SetTargetFPS(60);
@@ -187,6 +182,7 @@ int main() {
         if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
             switch (activeTool) {
                 case 0:
+                    printf("(%f, %f)\n", gridMouseCell.x, gridMouseCell.y);
                     image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
                     break;
                 case 1:
@@ -227,13 +223,15 @@ int main() {
 
         } else if (scene == EDITOR) {
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+            // Draw seprator
+            DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
             // Draw canvas
             for (int i = 0; i < numRows; i++) {
                 for (int j = 0; j < numColumns; j++) {
                     if (image[i][j]) {
-                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight, cellWidth, cellHeight, BLACK);
+                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
                     } else {
-                        DrawRectangle(CANVAS_X - 20 + j * cellWidth, CANVAS_Y - 20 + i * cellHeight, cellWidth, cellHeight, WHITE);
+                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, WHITE);
                     }
                 }
             }
