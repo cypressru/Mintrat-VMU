@@ -322,15 +322,15 @@ int main() {
             // Draw separator
             DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
             // Draw canvas
-            for (int i = 0; i < numRows; i++) {
-                for (int j = 0; j < numColumns; j++) {
-                    if (image[i][j]) {
-                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
-                    } else {
-                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
-                    }
-                }
-            }
+                //            for (int i = 0; i < numRows; i++) {
+                //              for (int j = 0; j < numColumns; j++) {
+                //                if (image[i][j]) {
+                //                  DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
+                    //            } else {
+                    //              DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
+                        //        }
+                        //  }
+                        //}
 
             for (int i = 0; i < numRows; i++)
             {
