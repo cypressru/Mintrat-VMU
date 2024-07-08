@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
 #define CANVAS_X 238
@@ -82,8 +81,6 @@ void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int h
     floodFill(image, x, y + 1, width, height, color);
     floodFill(image, x, y - 1, width, height, color);
 }
-
-
 
 void drawLine(float x0, float y0, float x1, float y1, bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows, bool color) {
     float dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
@@ -200,7 +197,7 @@ int main() {
     Vector2 gridMouseCell = {0, 0};
 
     Vector2 dragStartPoint = {0, 0};
-    Vector2 dragEndPoint = {0,0};
+    Vector2 dragEndPoint = {0, 0};
 
     // Define editor controls rectangles
     Rectangle resolutionLayoutRecs[3] = {
@@ -218,6 +215,7 @@ int main() {
 
     Image mintRat = LoadImage("../mintrat.png");
     Texture2D texMintRat = LoadTextureFromImage(mintRat);
+    UnloadImage(mintRat);
 
     SetTargetFPS(240);
     //--------------------------------------------------------------------------------------
@@ -231,8 +229,12 @@ int main() {
             case SELECT_RESOLUTION:
                 break;
             case EDITOR:
+                if (gridMouseCell.x < 0 || gridMouseCell.x > numColumns || gridMouseCell.y < 0 || gridMouseCell.y > numRows) {
+                    break;
+                }
+
                 if (IsMouseButtonPressed(0)) {
-                    switch(activeTool) {
+                    switch (activeTool) {
                         case 3:
                             dragStartPoint = gridMouseCell;
                             break;
@@ -240,7 +242,8 @@ int main() {
                             break;
                     }
                 }
-                if (IsMouseButtonDown(0) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+
+                if (IsMouseButtonDown(0)) {
                     switch (activeTool) {
                         case 0:
                             printf("(%f, %f)\n", gridMouseCell.x, gridMouseCell.y);
@@ -255,14 +258,12 @@ int main() {
                             }
                             break;
                         case 3:
-                            dragEndPoint = gridMouseCell;
-                            DrawLineEx(dragStartPoint, dragEndPoint, 11, BLACK);
-                            //drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
+                            dragEndPoint = GetMousePosition();
                             break;
                         default:
                             break;
                     };
-                } else if (IsMouseButtonDown(1) && gridMouseCell.x >= 0 && gridMouseCell.x < numColumns && gridMouseCell.y >= 0 && gridMouseCell.y < numRows) {
+                } else if (IsMouseButtonDown(1)) {
                     switch (activeTool) {
                         case 0:
                             image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
@@ -278,19 +279,16 @@ int main() {
                     };
                 }
                 if (IsMouseButtonReleased(0)) {
-                    switch(activeTool) {
+                    switch (activeTool) {
                         case 3:
-                            dragEndPoint = gridMouseCell;
+                            if (dragStartPoint.x >= 0 && dragStartPoint.x <= canvasWidth && dragStartPoint.y >= 0 && dragStartPoint.y <= canvasHeight) {
+                                drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
+                            }
                             break;
                         default:
                             break;
                     }
                 }
-
-
-
-
-
                 break;
         }
 
@@ -324,8 +322,8 @@ int main() {
             if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
             GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
             DrawEllipse(95, 390, 70, 20, (Color){0, 0, 0, 150});
-            DrawTextureEx(texMintRat, (Vector2){ 40, 300 }, 0.0f, 2, WHITE);
-            //DrawTexture(texMintRat, 70, 370, WHITE);
+            DrawTextureEx(texMintRat, (Vector2){40, 300}, 0.0f, 2, WHITE);
+            // DrawTexture(texMintRat, 70, 370, WHITE);
         }
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -334,6 +332,7 @@ int main() {
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();  // Close window and OpenGL context
+    UnloadTexture(texMintRat);
     //--------------------------------------------------------------------------------------
 
     return 0;
