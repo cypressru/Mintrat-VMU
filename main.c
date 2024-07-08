@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "MintedRat.h"
+
 #define MAX_WIDTH 48
 #define MAX_HEIGHT 32
 #define CANVAS_X 200
@@ -100,6 +102,7 @@ static void LoadButton();
 int main() {
     // Initialization
     //---------------------------------------------------------------------------------------
+    
     int screenWidth = 800;
     int screenHeight = 480;
 
@@ -107,7 +110,11 @@ int main() {
 
     Scenes scene = SELECT_RESOLUTION;
 
+
     InitWindow(screenWidth, screenHeight, "Mintrat");
+    //Here ya go
+    GuiLoadStyleMintedRat();
+    
 
     Vector2 mousePos;
     bool mouseDown = false;
