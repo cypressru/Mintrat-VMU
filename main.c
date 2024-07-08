@@ -83,6 +83,8 @@ void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int h
     floodFill(image, x, y - 1, width, height, color);
 }
 
+
+
 void drawLine(float x0, float y0, float x1, float y1, bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows, bool color) {
     float dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
     float dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
@@ -198,6 +200,7 @@ int main() {
     Vector2 gridMouseCell = {0, 0};
 
     Vector2 dragStartPoint = {0, 0};
+    Vector2 dragEndPoint = {0,0};
 
     // Define editor controls rectangles
     Rectangle resolutionLayoutRecs[3] = {
@@ -252,7 +255,9 @@ int main() {
                             }
                             break;
                         case 3:
-                            drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
+                            dragEndPoint = gridMouseCell;
+                            DrawLineEx(dragStartPoint, dragEndPoint, 11, BLACK);
+                            //drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
                             break;
                         default:
                             break;
@@ -272,6 +277,20 @@ int main() {
                             break;
                     };
                 }
+                if (IsMouseButtonReleased(0)) {
+                    switch(activeTool) {
+                        case 3:
+                            dragEndPoint = gridMouseCell;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+
+
+
+
                 break;
         }
 
