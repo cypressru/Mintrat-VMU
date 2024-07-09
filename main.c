@@ -2,6 +2,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "src/raygui.h"
 #include "src/MintedRat.h"
+#include "src/mintraticon.h"
 
 #include "src/defines.h"
 #include "src/save.c"
@@ -118,9 +119,14 @@ int main() {
     InitWindow(screenWidth, screenHeight, "Mintrat");
     GuiLoadStyleMintedRat();
     SetTargetFPS(240);
-    Image mintRat = LoadImage("../assets/mintrat.png");
-    Texture2D texMintRat = LoadTextureFromImage(mintRat);
-    UnloadImage(mintRat);
+
+    Image mintRatIcon = { 0 };
+    mintRatIcon.format = MINTRATICON_FORMAT;
+    mintRatIcon.width = MINTRATICON_WIDTH;
+    mintRatIcon.height = MINTRATICON_HEIGHT;
+    mintRatIcon.data = MINTRATICON_DATA;
+    mintRatIcon.mipmaps = 1;
+    Texture2D texMintRat = LoadTextureFromImage(mintRatIcon);
     //--------------------------------------------------------------------------------------//
 
     //------------------------------------------------------------------------------------
