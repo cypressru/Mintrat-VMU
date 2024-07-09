@@ -1,3 +1,4 @@
 build/
+.vscode/
 CMake*
 testfile.c
