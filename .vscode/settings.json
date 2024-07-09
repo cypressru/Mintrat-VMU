@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "config": "ignore",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "mintedrat.h": "c",
+        "raylib.h": "c",
+        "stdio.h": "c",
+        "raygui.h": "c",
+        "tools.h": "c"
+    }
+}

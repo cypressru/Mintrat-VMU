@@ -1,111 +1,22 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
-#include "MintedRat.h"
+#include "src/raygui.h"
+#include "src/MintedRat.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "src/defines.h"
+#include "src/save.c"
+#include "src/tools.c"
 
-#define MAX_WIDTH 48
-#define MAX_HEIGHT 32
-#define CANVAS_X 238
-#define CANVAS_Y 70
-#define TILE_SIZE 11
-
-Color lightMint = {239, 255, 228, 255};
-
-// SAVE
-
-char *SaveImageDialog(const char *default_name) {
-    char command[1024];
-    char path[1024];
-    FILE *fp;
-    snprintf(command, sizeof(command),
-             "zenity --file-selection --save --confirm-overwrite "
-             "--file-filter='C source files (*.c) | *.c' --filename='%s'",
-             default_name);
-    fp = popen(command, "r");
-    if (fgets(path, sizeof(path) - 1, fp) != NULL) {
-        path[strcspn(path, "\n")] = 0;
-        pclose(fp);
-        return strdup(path);
-    }
-    pclose(fp);
-    return NULL;
+//----------------------------------------------------------------------------------
+// Buttons Functions
+//----------------------------------------------------------------------------------
+static void SaveButton(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
+    printf("SAVE!\n");
+    SaveImage(image, numColumns, numRows);
 }
 
-void SaveImageToArray(const char *filePath, const bool image[MAX_HEIGHT][MAX_WIDTH], int width, int height) {
-    FILE *file = fopen(filePath, "w");
-    fprintf(file, "static const char VMU_Image = {\n");
-    for (int y = 0; y < height; y++) {
-        fprintf(file, "    0b");
-        for (int x = 0; x < width; x++) {
-            fprintf(file, "%d", image[y][x] ? 1 : 0);
-        }
-        fprintf(file, "%s\n", (y < height - 1) ? "," : "");
-    }
-    fprintf(file, "};\n\n");
-    fclose(file);
-}
-
-void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
-    char *filePath = SaveImageDialog("untitled.c");
-    if (filePath == NULL) {
-        return;
-    }
-    SaveImageToArray(filePath, image, numColumns, numRows);
-    free(filePath);
-}
-
-// ENUMS
-
-typedef enum Scenes {
-    SELECT_RESOLUTION = 0,
-    EDITOR = 1
-} Scenes;
-
-// TOOLS
-
-void floodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int height, bool color) {
-    if (x < 0 || x >= width || y < 0 || y >= height) {
-        return;
-    }
-    if (image[y][x] == color) {
-        return;
-    }
-    image[y][x] = color;
-
-    floodFill(image, x + 1, y, width, height, color);
-    floodFill(image, x - 1, y, width, height, color);
-    floodFill(image, x, y + 1, width, height, color);
-    floodFill(image, x, y - 1, width, height, color);
-}
-
-void drawLine(float x0, float y0, float x1, float y1, bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows, bool color) {
-    float dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-    float dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-    float err = dx + dy, e2;
-
-    while (true) {
-        if (x0 >= 0 && x0 < numColumns && y0 >= 0 && y0 < numRows) {
-            image[(int)y0][(int)x0] = color;
-        }
-
-        if (x0 == x1 && y0 == y1) {
-            break;
-        }
-
-        e2 = 2 * err;
-        if (e2 >= dy) {
-            err += dy;
-            x0 += sx;
-        }
-        if (e2 <= dx) {
-            err += dx;
-            y0 += sy;
-        }
-    }
+static void LoadButton() {
+    printf("LOAD!\n");
 }
 
 static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canvasWidth, int *canvasHeight, float *cellWidth, float *cellHeight, float *spacing, Rectangle *editorLayoutRecs) {
@@ -122,48 +33,42 @@ static void ConfirmButton(Scenes *scene, int numColumns, int numRows, int *canva
 
     *scene = EDITOR;
 }
-
-bool previewCanvas[MAX_HEIGHT][MAX_WIDTH] = {0};
-bool isDrawingLine = false;
+//----------------------------------------------------------------------------------//
 
 //----------------------------------------------------------------------------------
-// Controls Functions Declaration
+// Helper functions
 //----------------------------------------------------------------------------------
-static void SaveButton(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows);
-void SaveImage(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows);
-static void LoadButton();
+bool IsOutOfBounds(Vector2 gridMouseCell, int numColumns, int numRows) {
+    return gridMouseCell.x < 0 || gridMouseCell.x > numColumns || gridMouseCell.y < 0 || gridMouseCell.y > numRows;
+}
+//----------------------------------------------------------------------------------//
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main() {
+    //----------------------------------------------------------------------------------
     // Initialization
-    //---------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
 
     int screenWidth = 800;
     int screenHeight = 480;
 
-    int tile_size;
-
     Scenes scene = SELECT_RESOLUTION;
-
-    InitWindow(screenWidth, screenHeight, "Mintrat");
-    // Here ya go
-    GuiLoadStyleMintedRat();
 
     Vector2 mousePos;
     bool mouseDown = false;
-    bool savingFile = false;
 
     bool image[MAX_HEIGHT][MAX_WIDTH] = {0};
+    bool previewCanvas[MAX_HEIGHT][MAX_WIDTH] = {0};
+    bool isDrawingLine = false;
 
-    //----------------------------------------------------------------------------------
-    // Const text
-    const char *ToggleGroupToolsText = "#22#;#28#;#29#;#30#";
+    bool savingFile = false;
+
+    const char *ToggleGroupToolsText = "#22#;#28#;#29#;#192#";
     const char *SaveButtonText = "#05# Save";
     const char *LoadButtonText = "#06# Load";
 
-    // Define anchors
     Vector2 anchorTopLeft = {20, 20};
     Vector2 anchorTopCenter = {screenWidth / 2, 20};
     Vector2 anchorTopRight = {screenWidth - 20, 20};
@@ -178,13 +83,10 @@ int main() {
 
     Vector2 anchorCanvasTopLeft = {CANVAS_X, CANVAS_Y};
 
-    // Define controls variables
     int activeTool = 0;  // 0 = Draw | 1 = Erase | 2 = Fill | 3 = Line |
 
     bool editResolutionWidth = 0;
     bool editResolutionHeight = 0;
-
-    // Define stuff TODO: name this shit lol
 
     int numColumns = 48;  // Width
     int numRows = 32;     // Height
@@ -194,15 +96,12 @@ int main() {
 
     float cellWidth = canvasWidth / numColumns;
     float cellHeight = canvasHeight / numRows;
-
     float spacing = (cellWidth + cellHeight) / 2;
 
     Vector2 gridMouseCell = {0, 0};
-
     Vector2 dragStartPoint = {0, 0};
     Vector2 dragEndPoint = {0, 0};
 
-    // Define editor controls rectangles
     Rectangle resolutionLayoutRecs[3] = {
         (Rectangle){anchorCenterCenter.x - 140, anchorCenterCenter.y - 20, 100, 30},  // Spinner: Width
         (Rectangle){anchorCenterCenter.x + 40, anchorCenterCenter.y - 20, 100, 30},   // Spinner: Height
@@ -210,202 +109,126 @@ int main() {
     };
 
     Rectangle editorLayoutRecs[4] = {
-        (Rectangle){anchorCenterLeft.x + 20, anchorCenterLeft.y * 0.7, 40, 24},               // ToggleGroup: Tools
+        (Rectangle){anchorCenterLeft.x - 5, anchorCenterLeft.y * 0.7, 40, 24},                // ToggleGroup: Tools
         (Rectangle){anchorTopLeft.x + 84, anchorTopLeft.y + 20, 60, 40},                      // LabelButton: Save
         (Rectangle){anchorTopLeft.x + 20, anchorTopLeft.y + 20, 60, 40},                      // LabelButton: Load
         (Rectangle){anchorCanvasTopLeft.x, anchorCanvasTopLeft.y, canvasWidth, canvasHeight}  // GuiGrid, Canvas
     };
 
-    Image mintRat = LoadImage("../mintrat.png");
+    InitWindow(screenWidth, screenHeight, "Mintrat");
+    GuiLoadStyleMintedRat();
+    SetTargetFPS(240);
+    Image mintRat = LoadImage("../assets/mintrat.png");
     Texture2D texMintRat = LoadTextureFromImage(mintRat);
     UnloadImage(mintRat);
+    //--------------------------------------------------------------------------------------//
 
-    SetTargetFPS(240);
-    //--------------------------------------------------------------------------------------
-
+    //------------------------------------------------------------------------------------
     // Main game loop
+    //------------------------------------------------------------------------------------
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
+        //------------------------------------------------------------------------------------
         // Update
+        //------------------------------------------------------------------------------------
+        bool mouseButtonPresses[2] = {IsMouseButtonPressed(0), IsMouseButtonPressed(1)};
+        bool mouseButtonReleases[2] = {IsMouseButtonReleased(0), IsMouseButtonReleased(1)};
+        bool mouseButtonDowns[2] = {IsMouseButtonDown(0), IsMouseButtonDown(1)};
 
         switch (scene) {
             case SELECT_RESOLUTION:
                 break;
-            case EDITOR: // TODO: Organize this mess, there's a lot of repeated code
-                if (gridMouseCell.x < 0 || gridMouseCell.x > numColumns || gridMouseCell.y < 0 || gridMouseCell.y > numRows) {  // Out of bounds
-                    if (IsMouseButtonReleased(0)) {
-                        switch (activeTool) {
-                            case 3:
-                                if (isDrawingLine) {
-                                    isDrawingLine = false;
-                                    // Draw the final line on the actual image
-                                    drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, 1);
-                                }
-                                break;
-                        }
-                    } else if (IsMouseButtonReleased(1)) {
-                        switch (activeTool) {
-                            case 3:
-                                if (isDrawingLine) {
-                                    isDrawingLine = false;
-                                    // Draw the final line on the actual image
-                                    drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, 0);
-                                }
-                                break;
-                        }
+            case EDITOR:
+                if (IsOutOfBounds(gridMouseCell, numColumns, numRows)) {
+                    if (mouseButtonReleases[0] || mouseButtonReleases[1]) {
+                        if (!isDrawingLine) break;
+                        isDrawingLine = false;
+                        DrawBresenhamLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, mouseButtonReleases[0] ? 1 : 0);
                     }
-                    break;
-                } else if (IsMouseButtonPressed(0)) {
-                    switch (activeTool) {
-                        case 3:
-                            dragStartPoint = gridMouseCell;
-                            isDrawingLine = true;
-                            // Initialize previewCanvas with the current image
-                            memcpy(previewCanvas, image, sizeof(image));
-                            break;
-                    }
-                } else if (IsMouseButtonPressed(1)) {
-                    switch (activeTool) {
-                        case 3:
-                            dragStartPoint = gridMouseCell;
-                            isDrawingLine = true;
-                            // Initialize previewCanvas with the current image
-                            memcpy(previewCanvas, image, sizeof(image));
-                            break;
-                    }
-                } else if (IsMouseButtonDown(0)) {
+                } else if (mouseButtonPresses[0] || mouseButtonPresses[1]) {
+                    if (activeTool != 3) break;
+                    dragStartPoint = gridMouseCell;
+                    isDrawingLine = true;
+                    // Initialize previewCanvas with the current image
+                    memcpy(previewCanvas, image, sizeof(image));
+                } else if (mouseButtonDowns[0] || mouseButtonDowns[1]) {
                     switch (activeTool) {
                         case 0:
-                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = mouseButtonDowns[0] ? 1 : 0;
                             break;
                         case 1:
-                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
+                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = mouseButtonDowns[0] ? 0 : 1;
                             break;
                         case 2:
-                            if (image[(int)gridMouseCell.y][(int)gridMouseCell.x] == 0) {
-                                floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 1);
-                            }
+                            FloodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, mouseButtonDowns[0] ? 1 : 0);
                             break;
                         case 3:
-                            memcpy(previewCanvas, image, sizeof(image));
-                            // Draw preview line on previewCanvas
+                            memcpy(previewCanvas, image, sizeof(image));  // Draw preview line on previewCanvas
                             dragEndPoint = gridMouseCell;
-                            drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, previewCanvas, numColumns, numRows, 1);
+                            DrawBresenhamLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, previewCanvas, numColumns, numRows, mouseButtonDowns[0] ? 1 : 0);
                             break;
                         default:
                             break;
-                    };
-                } else if (IsMouseButtonDown(1)) {
-                    switch (activeTool) {
-                        case 0:
-                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 0;
-                            break;
-                        case 1:
-                            image[(int)gridMouseCell.y][(int)gridMouseCell.x] = 1;
-                            break;
-                        case 2:
-                            floodFill(image, (int)gridMouseCell.x, (int)gridMouseCell.y, numColumns, numRows, 0);
-                            break;
-                        case 3:
-                            memcpy(previewCanvas, image, sizeof(image));
-                            // Draw preview line on previewCanvas
-                            dragEndPoint = gridMouseCell;
-                            drawLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, previewCanvas, numColumns, numRows, 0);
-                            break;
-                        default:
-                            break;
-                    };
-                } else if (IsMouseButtonReleased(0)) {
-                    switch (activeTool) {
-                        case 3:
-                            if (isDrawingLine) {
-                                isDrawingLine = false;
-                                // Draw the final line on the actual image
-                                drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 1);
-                            }
-                            break;
                     }
-                } else if (IsMouseButtonReleased(1)) {
-                    switch (activeTool) {
-                        case 3:
-                            if (isDrawingLine) {
-                                isDrawingLine = false;
-                                printf("DRAW!!!!\n");
-                                // Draw the final line on the actual image
-                                drawLine(dragStartPoint.x, dragStartPoint.y, gridMouseCell.x, gridMouseCell.y, image, numColumns, numRows, 0);
-                            }
-                            break;
-                    }
+                } else if (mouseButtonReleases[0] || mouseButtonReleases[1]) {
+                    if (!isDrawingLine) break;
+                    isDrawingLine = false;
+                    DrawBresenhamLine(dragStartPoint.x, dragStartPoint.y, dragEndPoint.x, dragEndPoint.y, image, numColumns, numRows, mouseButtonReleases[0] ? 1 : 0);
                 }
                 break;
+            default:
+                break;
         }
+        //------------------------------------------------------------------------------------//
 
+        //------------------------------------------------------------------------------------
         // Draw
+        //------------------------------------------------------------------------------------
         BeginDrawing();
-        if (scene == SELECT_RESOLUTION) {
-            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+        switch (scene) {
+            case SELECT_RESOLUTION:
+                ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-            if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &numColumns, 1, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
-            if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &numRows, 1, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
-            if (GuiButton(resolutionLayoutRecs[2], "Confirm")) ConfirmButton(&scene, numColumns, numRows, &canvasWidth, &canvasHeight, &cellWidth, &cellHeight, &spacing, editorLayoutRecs);
+                if (GuiSpinner(resolutionLayoutRecs[0], "Width  ", &numColumns, 1, MAX_WIDTH, editResolutionWidth)) editResolutionWidth = !editResolutionWidth;
+                if (GuiSpinner(resolutionLayoutRecs[1], "Height  ", &numRows, 1, MAX_HEIGHT, editResolutionHeight)) editResolutionHeight = !editResolutionHeight;
+                if (GuiButton(resolutionLayoutRecs[2], "Confirm")) ConfirmButton(&scene, numColumns, numRows, &canvasWidth, &canvasHeight, &cellWidth, &cellHeight, &spacing, editorLayoutRecs);
+                break;
+            case EDITOR:
+                ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-        } else if (scene == EDITOR) {
-            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+                // Draw separator
+                DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
 
-            // Draw separator
-            DrawLine(anchorTopCenter.x / 2, 0, anchorBottomCenter.x / 2, screenHeight, BLACK);
-<<<<<<< Updated upstream
-
-            // Draw canvas
-            for (int i = 0; i < numRows; i++) {
-                for (int j = 0; j < numColumns; j++) {
-                    if ((isDrawingLine && previewCanvas[i][j]) || (!isDrawingLine && image[i][j])) {
-=======
-            // Draw canvas
-            for (int i = 0; i < numRows; i++)
-            {
-                for (int j = 0; j < numColumns; j++)
-                {
-                    if ((isDrawingLine && previewCanvas[i][j]) || (!isDrawingLine && image[i][j]))
-                    {
->>>>>>> Stashed changes
-                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
-                    } else {
-                        DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
+                // Draw canvas
+                for (int i = 0; i < numRows; i++) {
+                    for (int j = 0; j < numColumns; j++) {
+                        if ((isDrawingLine && previewCanvas[i][j]) || (!isDrawingLine && image[i][j])) {
+                            DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, BLACK);
+                        } else {
+                            DrawRectangle(CANVAS_X + j * cellWidth, CANVAS_Y + i * cellHeight, cellWidth, cellHeight, lightMint);
+                        }
                     }
                 }
-            }
 
-            // Draw controls
-            GuiToggleGroup(editorLayoutRecs[0], ToggleGroupToolsText, &activeTool);
-            if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton(image, numColumns, numRows);
-            if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();
-            GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);
-            DrawEllipse(95, 390, 70, 20, (Color){0, 0, 0, 150});
-            DrawTextureEx(texMintRat, (Vector2){40, 300}, 0.0f, 2, WHITE);
+                // Draw controls
+                GuiToggleGroup(editorLayoutRecs[0], ToggleGroupToolsText, &activeTool);                      // Tools
+                if (GuiButton(editorLayoutRecs[1], SaveButtonText)) SaveButton(image, numColumns, numRows);  // Save
+                if (GuiButton(editorLayoutRecs[2], LoadButtonText)) LoadButton();                            // Load
+                GuiGrid(editorLayoutRecs[3], NULL, spacing, 1, &gridMouseCell);                              // Canvas Grid
+                DrawEllipse(95, 390, 70, 20, (Color){0, 0, 0, 150});                                         // Mintrat's shadow
+                DrawTextureEx(texMintRat, (Vector2){40, 300}, 0.0f, 2, WHITE);                               // Mintrat :)
         }
-        EndDrawing();
-        //----------------------------------------------------------------------------------
-    }
 
+        EndDrawing();
+        //----------------------------------------------------------------------------------//
+    }
+    //--------------------------------------------------------------------------------------//
+
+    //--------------------------------------------------------------------------------------
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();  // Close window and OpenGL context
     UnloadTexture(texMintRat);
-    //--------------------------------------------------------------------------------------
-
+    //--------------------------------------------------------------------------------------//
     return 0;
-}
-
-//------------------------------------------------------------------------------------
-// Controls Functions Definitions (local)
-//------------------------------------------------------------------------------------
-
-static void SaveButton(const bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows) {
-    printf("SAVE!\n");
-    SaveImage(image, numColumns, numRows);
-}
-
-static void LoadButton() {
-    printf("LOAD!\n");
 }
