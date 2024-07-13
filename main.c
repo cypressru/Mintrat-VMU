@@ -145,6 +145,9 @@ int main()
 
     };
 
+    
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE); 
+
     InitWindow(screenWidth, screenHeight, "Mintrat");
     GuiLoadStyleMintedRat();
     SetTargetFPS(240);
