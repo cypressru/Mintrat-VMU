@@ -286,7 +286,7 @@ int main() {
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();  // Close window and OpenGL context
-    UnloadTexture(texMintRat);
+    //UnloadTexture(texMintRat);
     //--------------------------------------------------------------------------------------//
     return 0;
 }
