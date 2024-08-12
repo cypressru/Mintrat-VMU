@@ -16,8 +16,8 @@ void FloodFill(bool image[MAX_HEIGHT][MAX_WIDTH], int x, int y, int width, int h
 }
 
 void DrawBresenhamLine(float x0, float y0, float x1, float y1, bool image[MAX_HEIGHT][MAX_WIDTH], int numColumns, int numRows, bool color) {
-    float dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-    float dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    float dx = fabsf(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    float dy = -fabsf(y1 - y0), sy = y0 < y1 ? 1 : -1;
     float err = dx + dy, e2;
 
     while (true) {
