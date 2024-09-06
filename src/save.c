@@ -20,13 +20,19 @@ char *SaveImageDialog(const char *default_name) {
 
 void SaveImageToArray(const char *filePath, const bool image[MAX_HEIGHT][MAX_WIDTH], int width, int height) {
     FILE *file = fopen(filePath, "w");
-    fprintf(file, "static const char VMU_Image = {\n");
+    fprintf(file, "static const unsigned char VMU_Image = {\n");
     for (int y = 0; y < height; y++) {
-        fprintf(file, "    0b");
-        for (int x = 0; x < width; x++) {
-            fprintf(file, "%d", image[y][x] ? 1 : 0);
+        for (int x = 0; x < width / 8; x++) {
+            unsigned char value = 0;
+            for (int i = 0; i < 8; i++) {
+                value |= image[y][x * 8 + i] ? (1 << (7 - i)) : 0;
+            }
+            fprintf(file, "    0b%08b", value);
+            if (x < width / 8 - 1 || y < height - 1) {
+                fprintf(file, ",");
+            }
         }
-        fprintf(file, "%s\n", (y < height - 1) ? "," : "");
+        fprintf(file, "\n");
     }
     fprintf(file, "};\n\n");
     fclose(file);
